@@ -18,6 +18,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Get release number
-        run: echo "::set-output name=release_number::echo $GITHUB_REF | sed -n -e 's/^refs\/tags\/releases\/\(v.*\)/\1/p'"
+        run: "::set-output name=release_number::echo $GITHUB_REF | sed -n -e 's/^refs\/tags\/releases\/\(v.*\)/\1/p'"
       - name: Release
         run: echo Only for releases tags  ${{steps.release.outputs.release_number}} 
