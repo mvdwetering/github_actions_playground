@@ -17,5 +17,5 @@ jobs:
     needs: validate
     runs-on: "ubuntu-latest"
     steps:
-      - name Release
+      - name: Release
         run: echo Only for releases tags
