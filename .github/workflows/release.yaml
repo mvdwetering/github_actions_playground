@@ -1,17 +1,21 @@
 name: On release tagged
 
 on:
-  create:
-    types: [tags]
-    tags:
-      - ^v\d+.\d+.\d+((a|b)\d+)?$
+  # create:
+  #   types: [tags]
+  #   tags:
+  #     - ^v\d+.\d+.\d+((a|b)\d+)?$
   push:
     tags:
+      - ^v\d+.\d+.\d+((a|b)\d+)?$
 
 jobs:
   release:
     runs-on: "ubuntu-latest"
     steps:
+      - uses: actions/checkout@v4
+      - run: |
+          :: Checkout done for $GITHUB_REF
       - name: Get integration name
         run: |
           INTEGRATION_SUBDIR=$(ls -d custom_components/*/)
@@ -20,9 +24,6 @@ jobs:
       - name: Get release number
         run: |
          ::set-output name=release_number::$GITHUB_REF | sed -n -e 's/^refs\/tags\/releases\/\(v.*\)/\1/p'
-      - uses: actions/checkout@v4
-      - run: |
-          :: Checkout done for $GITHUB_REF
       - name: Zip custom components dir
         working-directory: "custom_components/${{ env.INTEGRATION_NAME }}"
         run: zip -r ${{ env.INTEGRATION_NAME }}.zip ./*
