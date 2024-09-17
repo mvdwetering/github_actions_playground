@@ -3,13 +3,13 @@ name: On release tagged
 # TODO: Get the create working
 
 on:
-  # create:
-  #   types: [tags]
-  #   tags:
-  #     - ^v\d+.\d+.\d+((a|b)\d+)?$
-  push:
+  create:
+    types: [tags]
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  # push:
+  #   tags:
+  #     - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   release:
