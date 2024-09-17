@@ -38,7 +38,7 @@ jobs:
         # --discussion-category "General" not possible for draft releases :/
         run: |
           ls -R
-          gh release create "$tag" " ./custom_components/${{ env.INTEGRATION_NAME }}/${{ env.INTEGRATION_NAME }}.zip" \
+          gh release create "$tag" "./custom_components/${{ env.INTEGRATION_NAME }}/${{ env.INTEGRATION_NAME }}.zip" \
               --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} $tag" \
               --generate-notes \
