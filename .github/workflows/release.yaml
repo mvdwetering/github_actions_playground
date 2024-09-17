@@ -7,7 +7,7 @@ on:
   #     - ^v\d+.\d+.\d+((a|b)\d+)?$
   push:
     tags:
-      - ^v\d+.\d+.\d+((a|b)\d+)?$
+      - ^v*$
 
 jobs:
   release:
