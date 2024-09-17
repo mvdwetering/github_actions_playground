@@ -21,9 +21,6 @@ jobs:
           INTEGRATION_SUBDIR=$(ls -d custom_components/*/)
           echo "INTEGRATION_NAME=$(echo $INTEGRATION_SUBDIR | cut -d'/' -f2)" >> $GITHUB_ENV
           echo Integration name: ${{ env.INTEGRATION_NAME }}
-      # - name: Get release number
-      #   run: |
-      #   echo "RELEASE_NUMBER=${GITHUB_REF#refs/tags/releases/v}" >> $GITHUB_ENV
       - name: Zip custom components dir
         working-directory: "custom_components/${{ env.INTEGRATION_NAME }}"
         run: zip -r ${{ env.INTEGRATION_NAME }}.zip ./*
