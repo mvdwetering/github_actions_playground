@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          :: Checkout done for $GITHUB_REF
+          echo Checkout done for $GITHUB_REF
       - name: Get integration name
         run: |
           INTEGRATION_SUBDIR=$(ls -d custom_components/*/)
