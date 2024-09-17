@@ -27,27 +27,41 @@ jobs:
       - name: Zip custom components dir
         working-directory: "custom_components/${{ env.INTEGRATION_NAME }}"
         run: zip -r ${{ env.INTEGRATION_NAME }}.zip ./*
+
       - name: Create Release
+        # From: https://stackoverflow.com/questions/75679683/how-can-i-auto-generate-a-release-note-and-create-a-release-using-github-actions
         id: create_release
-        uses: actions/create-release@v1  # Official Github action
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-#          body: |
-#            Changes in this Release
-#            - First Change
-#            - Second Change
-          draft: true
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./custom_components/${{ env.INTEGRATION_NAME }}/${{ env.INTEGRATION_NAME }}.zip
-          asset_name: ${{ env.INTEGRATION_NAME }}.zip
-          asset_content_type: application/zip
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes \
+              --discussion-category "General" \
+              --draft
+#       - name: Create Release
+#         id: create_release
+#         uses: actions/create-release@v1  # Official Github action
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+#         with:
+#           tag_name: ${{ github.ref }}
+#           release_name: ${{ github.ref }}
+# #          body: |
+# #            Changes in this Release
+# #            - First Change
+# #            - Second Change
+#           draft: true
+#           prerelease: false
+#       - name: Upload Release Asset
+#         id: upload-release-asset
+#         uses: actions/upload-release-asset@v1
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         with:
+#           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+#           asset_path: ./custom_components/${{ env.INTEGRATION_NAME }}/${{ env.INTEGRATION_NAME }}.zip
+#           asset_name: ${{ env.INTEGRATION_NAME }}.zip
+#           asset_content_type: application/zip
