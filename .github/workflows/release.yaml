@@ -9,7 +9,7 @@ on:
   #     - ^v\d+.\d+.\d+((a|b)\d+)?$
   push:
     tags:
-      - v*
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   release:
