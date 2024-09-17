@@ -20,7 +20,7 @@ jobs:
         run: |
           INTEGRATION_SUBDIR=$(ls -d custom_components/*/)
           echo "INTEGRATION_NAME=$(echo $INTEGRATION_SUBDIR | cut -d'/' -f2)" >> $GITHUB_ENV
-          :: Integration name: ${{ env.INTEGRATION_NAME }}
+          echo Integration name: ${{ env.INTEGRATION_NAME }}
       - name: Get release number
         run: |
          ::set-output name=release_number::$GITHUB_REF | sed -n -e 's/^refs\/tags\/releases\/\(v.*\)/\1/p'
