@@ -137,7 +137,8 @@ def bump_version(
     elif patch:
         patch_number = int(patch_number) + 1
         modifier = ""
-    elif alpha:
+
+    if alpha:
         if not modifier:
             alpha_version = 0
         elif version.alpha:
