@@ -76,7 +76,7 @@ class Git():
 
 def get_release_type():
     while True:
-        str_choice = input("What type of release is this?\n  1 = Major\n  2 = Minor\n  3 = Patch\n: ")
+        str_choice = input("What type of release is this?\n  1 = Major\n  2 = Minor\n  3 = Patch\n  4 = Beta\n: ")
         try:
             choice = int(str_choice)
         except ValueError:
