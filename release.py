@@ -92,7 +92,7 @@ class Git:
         subprocess.run(["git", "fetch", "--tags"])
 
 
-def enum_menu(title, choices):
+def menu(title, choices):
     while True:
         print(title)
         for i, choice in enumerate(choices):
@@ -104,9 +104,13 @@ def enum_menu(title, choices):
             print("Invalid input, please enter a number")
             continue
         if choice in range(1, len(choices) + 1):
-            return choices[choice]
+            return choices[choice-1]
         else:
             print("Invalid input, please enter a valid number")
+
+def enum_menu(title, enum_type):
+    choices = [choice.name for choice in enum_type]
+    return enum_type[menu(title, choices)]
 
 def bump_version(
     version,
