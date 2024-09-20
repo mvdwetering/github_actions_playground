@@ -104,13 +104,15 @@ def menu(title, choices):
             print("Invalid input, please enter a number")
             continue
         if choice in range(1, len(choices) + 1):
-            return choices[choice-1]
+            return choices[choice - 1]
         else:
             print("Invalid input, please enter a valid number")
+
 
 def enum_menu(title, enum_type):
     choices = [choice.name for choice in enum_type]
     return enum_type[menu(title, choices)]
+
 
 def bump_version(
     version,
@@ -220,7 +222,9 @@ def main(args):
     branch = Git.get_current_branch()
 
     if not (branch.is_dev or branch.is_release):
-        raise ValueError(f"Unexpected branch: {branch.name}, should be dev or release/x.y.z")
+        raise ValueError(
+            f"Unexpected branch: {branch.name}, should be dev or release/x.y.z"
+        )
 
     if not Git.workarea_is_clean():
         logging.error("Workarea is not clean")
@@ -239,7 +243,9 @@ def main(args):
         print(f"Last released version was {last_released_version}")
 
         release_type = enum_menu("What type of release is this?", ReleaseType)
-        release_type_modifier = enum_menu("Create releasebranch for alpha or beta?", ReleaseTypeModifier)
+        release_type_modifier = enum_menu(
+            "Create releasebranch for alpha or beta?", ReleaseTypeModifier
+        )
 
         next_version = bump_version(
             last_released_version,
@@ -273,7 +279,6 @@ def main(args):
                 alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
                 beta=release_type_modifier == ReleaseTypeModifier.BETA,
             )
-
 
     tag_name = f"v{next_version}"
 
@@ -320,7 +325,7 @@ def main(args):
         Git.push_to_origin(MASTER)
 
     if bump_version_after_release:
-        assert(branch.is_release)
+        assert branch.is_release
         update_manifest_version_number(bump_version_after_release)
         Git.add_changes()
         Git.commit_changes("Update version to {bump_version_after_release}")
