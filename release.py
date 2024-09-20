@@ -304,7 +304,6 @@ def main(args):
 
     print(f"On branch: {branch.name}")
     print(f"Release branch to use: {release_branch_name}")
-    print(f"Tag name: {tag_name}")
     if bump_version_after_release:
         print(f"Bump version after release: {bump_version_after_release}")
     print(" ")
