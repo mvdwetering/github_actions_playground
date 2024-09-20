@@ -317,6 +317,7 @@ def main(args):
         Git.create_branch(release_branch_name)
         Git.checkout(release_branch_name)
 
+    if branch.is_dev or (branch.is_release and not next_version.modifier):
         update_manifest_version_number(next_version)
         Git.add_changes()
         Git.commit_changes(f"Update version to {next_version}")
