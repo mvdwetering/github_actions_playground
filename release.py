@@ -247,6 +247,8 @@ def main(args):
             beta=release_type_modifier == ReleaseTypeModifier.BETA,
         )
 
+        print(next_version)
+
         # Release branch does not have alpha/beta modifiers
         release_branch_name = f"release/{AwesomeVersion(f'{next_version.major}.{next_version.minor}.{next_version.patch}')}"
         Git.create_branch(release_branch_name)
