@@ -214,7 +214,11 @@ def get_version_from_manifest():
 
 def get_last_released_version():
     versions = get_versions()
-    logging.debug(f"Versions: {versions}")
+    logging.debug(f"All versions: {versions}")
+
+    versions = [version for version in versions if not version.modifier]
+    logging.debug(f"Real versions: {versions}")
+
     return versions[-1] if len(versions) > 0 else None
 
 
