@@ -271,11 +271,11 @@ def main(args):
         release_branch_name = branch.name
 
         # On release branch we can only bump alpha/beta, not major/minor/patch
-        release_type_modifier = enum_menu("Bump alpha or beta?", ReleaseTypeModifier)
+        release_type_modifier = enum_menu("Bump alpha or beta (no = release to master)?", ReleaseTypeModifier)
 
         if release_type_modifier == ReleaseTypeModifier.NO:
             next_version = AwesomeVersion(
-                manifest_version.major, manifest_version.minor, manifest_version.patch
+                f"{manifest_version.major}.{manifest_version.minor}.{manifest_version.patch}"
             )
         else:
             next_manifest_version = bump_version(
