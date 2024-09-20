@@ -7,16 +7,24 @@ import logging
 import subprocess
 import json
 import os
+import re
 
 from awesomeversion import AwesomeVersion
 
-MASTER = "master"	
+MASTER = "master"
+
 
 class ReleaseType(Enum):
     MAJOR = 1
     MINOR = 2
     PATCH = 3
-    BETA = 4
+
+
+class ReleaseTypeModifier(Enum):
+    NO = 1
+    ALPHA = 2
+    BETA = 3
+
 
 class Branch:
     def __init__(self, name):
@@ -25,12 +33,13 @@ class Branch:
     @property
     def is_dev(self):
         return self.name == "dev"
-    
+
     @property
     def is_release(self):
         return self.name.startswith("release/")
 
-class Git():
+
+class Git:
 
     @staticmethod
     def get_current_branch() -> Branch:
@@ -39,7 +48,12 @@ class Git():
 
     @staticmethod
     def workarea_is_clean() -> bool:
-        return subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip() == ""
+        return (
+            subprocess.check_output(["git", "status", "--porcelain"])
+            .decode("utf-8")
+            .strip()
+            == ""
+        )
 
     @staticmethod
     def checkout(branch):
@@ -62,6 +76,10 @@ class Git():
         subprocess.run(["git", "branch", "-D", name])
 
     @staticmethod
+    def create_branch(name):
+        subprocess.run(["git", "branch", name])
+
+    @staticmethod
     def create_tag(name):
         subprocess.run(["git", "tag", name])
 
@@ -74,9 +92,28 @@ class Git():
         subprocess.run(["git", "fetch", "--tags"])
 
 
+def enum_menu(title, choices):
+    while True:
+        print(title)
+        for i, choice in enumerate(choices):
+            print(f"  {i + 1} = {choice}")
+        str_choice = input(": ")
+        try:
+            choice = int(str_choice)
+        except ValueError:
+            print("Invalid input, please enter a number")
+            continue
+        if choice in range(1, len(choices) + 1):
+            return choices[choice - 1]
+        else:
+            print("Invalid input, please enter a valid number")
+
+
 def get_release_type():
     while True:
-        str_choice = input("What type of release is this?\n  1 = Major\n  2 = Minor\n  3 = Patch\n  4 = Beta\n: ")
+        str_choice = input(
+            "What type of release is this?\n  1 = Major\n  2 = Minor\n  3 = Patch\n  4 = Alpha\n  5 = Beta\n: "
+        )
         try:
             choice = int(str_choice)
         except ValueError:
@@ -89,9 +126,12 @@ def get_release_type():
         elif choice == 3:
             return ReleaseType.PATCH
         elif choice == 4:
+            return ReleaseType.ALPHA
+        elif choice == 5:
             return ReleaseType.BETA
         else:
             print("Invalid input, please enter a valid number")
+
 
 def determine_next_version(version, release_type):
     if release_type == ReleaseType.MAJOR:
@@ -99,11 +139,66 @@ def determine_next_version(version, release_type):
     elif release_type == ReleaseType.MINOR:
         return AwesomeVersion(f"{version.major}.{int(version.minor) + 1}.0")
     elif release_type == ReleaseType.PATCH:
-        return AwesomeVersion(f"{version.major}.{version.minor}.{int(version.patch) + 1}")
+        return AwesomeVersion(
+            f"{version.major}.{version.minor}.{int(version.patch) + 1}"
+        )
     elif release_type == ReleaseType.BETA:
-        return AwesomeVersion(f"{version.major}.{version.minor}.{version.patch}b{int(version.beta) + 1}")
+        return AwesomeVersion(
+            f"{version.major}.{version.minor}.{version.patch}b{int(version.beta) + 1}"
+        )
 
     raise ValueError(f"Invalid release type: {release_type}")
+
+
+def bump_version(
+    version,
+    major: bool = False,
+    minor: bool = False,
+    patch: bool = False,
+    alpha: bool = False,
+    beta: bool = False,
+):
+    major_number = version.major
+    minor_number = version.minor
+    patch_number = version.patch
+    modifier = version.modifier or ""
+
+    if major:
+        major_number = int(major_number) + 1
+        minor_number = 0
+        patch_number = 0
+        modifier = ""
+    elif minor:
+        minor_number = int(minor_number) + 1
+        patch_number = 0
+        modifier = ""
+    elif patch:
+        patch_number = int(patch_number) + 1
+        modifier = ""
+    elif alpha:
+        if not modifier:
+            alpha_version = 0
+        elif version.alpha:
+            if match := re.search(r"\d+$", modifier):
+                alpha_version = int(match.group()) + 1
+        else:
+            raise ValueError(
+                "Bumping a non-alpha version (e.g. beta) to an alpha modifier is not supported"
+            )
+        modifier = f"a{alpha_version}"
+    elif beta:
+        if not modifier or version.alpha:
+            beta_version = 0
+        elif version.beta:
+            if match := re.search(r"\d+$", modifier):
+                beta_version = int(match.group()) + 1
+        else:
+            raise ValueError(
+                "Bumping a non-beta version (e.g. rc) to a beta modifier is not supported"
+            )
+        modifier = f"b{beta_version}"
+
+    return AwesomeVersion(f"{major_number}.{minor_number}.{patch_number}{modifier}")
 
 
 def get_versions():
@@ -120,11 +215,17 @@ def get_versions():
 
 
 def get_integration_name():
-    dir_list = [name for name in os.listdir("custom_components") if os.path.isdir(os.path.join("custom_components", name))]
+    dir_list = [
+        name
+        for name in os.listdir("custom_components")
+        if os.path.isdir(os.path.join("custom_components", name))
+    ]
     if len(dir_list) != 1:
-        raise ValueError(f"Expected one directory below custom_components, but found {', '.join(dir_list)}")
+        raise ValueError(
+            f"Expected one directory below custom_components, but found {', '.join(dir_list)}"
+        )
     return dir_list[0]
-    
+
 
 def update_manifest_version_number(version):
     manifest_file = "custom_components/{}/manifest.json".format(get_integration_name())
@@ -135,6 +236,7 @@ def update_manifest_version_number(version):
     manifest["version"] = str(version)
     with open(manifest_file, "w") as f:
         json.dump(manifest, f, indent=2)
+
 
 def get_version_from_manifest():
     manifest_file = "custom_components/{}/manifest.json".format(get_integration_name())
@@ -160,50 +262,86 @@ def main(args):
 
     Git.fetch_tags()
 
+    manifest_version = get_version_from_manifest()
+    print(f"Manifest version is {manifest_version}")
+
+    # Alpha and beta modifiers are bumped after release when on a release branch
+    bump_version_after_release = None
+
     if branch.is_dev:
         last_released_version = get_last_released_version()
-        release_type = get_release_type()
+        print(f"Last released version was {last_released_version}")
 
-        next_version = determine_next_version(last_released_version, release_type)
-        logging.debug(f"Next version: {next_version}")
+        release_type = enum_menu("What type of release is this?", ReleaseType)
+        release_type_modifier = enum_menu("Create releasebranch for alpah or beta?", ReleaseTypeModifier)
+
+        next_version = bump_version(
+            last_released_version,
+            major=release_type == ReleaseType.MAJOR,
+            minor=release_type == ReleaseType.MINOR,
+            patch=release_type == ReleaseType.PATCH,
+            alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
+            beta=release_type_modifier == ReleaseTypeModifier.BETA,
+        )
+
+        # Release branch does not have alpha/beta modifiers
+        release_branch_name = f"release/{AwesomeVersion(f"{next_version.major}.{next_version.minor},{next_version.patch}")}"
+        Git.create_branch(release_branch_name)
 
     if branch.is_release:
-        current_version = get_version_from_manifest()
-        if current_version == AwesomeVersion("0.0.0"):
-            current_version = AwesomeVersion(branch.name.split("/")[1])
+        release_branch_name = branch.name
 
-        next_version = determine_next_version(current_version, release_type)
-        logging.debug(f"Next version: {next_version}")
+        # On release branch we can only bump alpha/beta, not major/minor/patch
+        release_type_modifier = enum_menu("Bump alpha or beta?", ReleaseTypeModifier)
 
-        print(f"Previous version was {last_released_version}")
-        if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
-            exit(1)
+        if release_type_modifier == ReleaseTypeModifier.NO:
+            next_version = AwesomeVersion(
+                manifest_version.major, manifest_version.minor, manifest_version.patch
+            )
+        else:
+            next_version = manifest_version
+            bump_version_after_release = bump_version(
+                manifest_version,
+                alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
+                beta=release_type_modifier == ReleaseTypeModifier.BETA,
+            )
 
-        release_branch_name = f"release/{next_version}"
-        tag_name = f"v{next_version}"
 
+    tag_name = f"v{next_version}"
 
-    print(f"Previous version was {last_released_version}")
-    if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
+    print(f"On branch: {branch.name}")
+    print(f"Release branch to use: {release_branch_name}")
+    print(f"Tag name: {tag_name}")
+    print(" ")
+
+    if input(f"Confirm release of version {next_version}? [y/N]: ") != "y":
         exit(1)
 
-    release_branch_name = f"release/{next_version}"
-    tag_name = f"v{next_version}"
-    logging.debug(f"Release branch: {release_branch_name}")
     logging.debug(f"Tag name: {tag_name}")
 
     if branch.name != release_branch_name:
         Git.checkout(release_branch_name)
 
-    update_manifest_version_number(next_version)
-    Git.add_changes()
-    Git.commit_changes("Update version to {next_version}")
+    if not bump_version_after_release:
+        update_manifest_version_number(next_version)
+        Git.add_changes()
+        Git.commit_changes("Update version to {next_version}")
 
-    if release_type != ReleaseType.BETA:
+    if not next_version.modifier:
         # Merge to master
         Git.checkout(MASTER)
         Git.pull()
-        subprocess.run(["git", "merge", "--no-ff", release_branch_name, "--strategy-option theirs", "-m", f"Release v{next_version}"])
+        subprocess.run(
+            [
+                "git",
+                "merge",
+                "--no-ff",
+                release_branch_name,
+                "--strategy-option theirs",
+                "-m",
+                f"Release v{next_version}",
+            ]
+        )
 
     Git.create_tag(tag_name)
 
@@ -213,9 +351,14 @@ def main(args):
     if Git.get_current_branch() == MASTER:
         Git.push_to_origin(MASTER)
 
+    if bump_version_after_release:
+        assert(branch.is_release)
+        update_manifest_version_number(bump_version_after_release)
+        Git.add_changes()
+        Git.commit_changes("Update version to {bump_version_after_release}")
+
     Git.push_to_origin(release_branch_name)
     Git.push_to_origin(tag_name)
-    
 
     # Restore initial branch
     Git.checkout(branch.name)
