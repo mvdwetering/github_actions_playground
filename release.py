@@ -130,83 +130,72 @@ def get_last_released_version():
 
 
 def main(args):
-
-    logging.basicConfig(level=args.loglevel)
-
     branch = get_current_branch()
-    logging.info(f"Current branch: {branch.name}")
 
     if not workarea_is_clean():
         logging.error("Workarea is not clean")
-        # exit(1) TODO ENABLE ME
+        exit(1)
 
-    if args.command == "release":
-        if branch.is_dev:
-            last_released_version = get_last_released_version()
-            release_type = get_release_type()
+    if branch.is_dev:
+        last_released_version = get_last_released_version()
+        release_type = get_release_type()
 
-            next_version = determine_next_version(last_released_version, release_type)
-            logging.debug(f"Next version: {next_version}")
+        next_version = determine_next_version(last_released_version, release_type)
+        logging.debug(f"Next version: {next_version}")
 
-            print(f"Previous version was {last_released_version}")
-            if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
-                exit(1)
+    if branch.is_release:
+        current_version = get_version_from_manifest()
+        if current_version == AwesomeVersion("0.0.0"):
+            current_version = AwesomeVersion(branch.name.split("/")[1])
 
-            release_branch_name = f"release/{next_version}"
-            tag_name = f"v{next_version}"
+        next_version = determine_next_version(current_version, release_type)
+        logging.debug(f"Next version: {next_version}")
 
-            checkout_branch(release_branch_name)
-
-        if branch.is_release:
-            current_version = get_version_from_manifest()
-            if current_version == AwesomeVersion("0.0.0"):
-                current_version = AwesomeVersion(branch.name.split("/")[1])
-
-            next_version = determine_next_version(current_version, release_type)
-            logging.debug(f"Next version: {next_version}")
-
-            print(f"Previous version was {last_released_version}")
-            if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
-                exit(1)
-
-            release_branch_name = f"release/{next_version}"
-            tag_name = f"v{next_version}"
-
-        logging.debug(f"Release branch: {release_branch_name}")
-        logging.debug(f"Tag name: {tag_name}")
-
-        update_manifest_version_number(next_version)
-        add_changes()
-        commit_changes("Update version to {next_version}")
-
-        if release_type != ReleaseType.BETA:
-            merge_to_master(release_branch_name, f"Release v{next_version}")
-
-        create_tag(tag_name)
-
-        if input("Push to origin? [y/N]: ") != "y":
+        print(f"Previous version was {last_released_version}")
+        if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
             exit(1)
 
-        if release_type != ReleaseType.BETA:
-            push_to_origin(MASTER)
+        release_branch_name = f"release/{next_version}"
+        tag_name = f"v{next_version}"
 
-        push_to_origin(release_branch_name)
-        push_to_origin(tag_name)
-        
 
-        # Restore initial branch
-        checkout_branch(branch.name)
+    print(f"Previous version was {last_released_version}")
+    if input(f"Confirm next {release_type.name} release version {next_version}? [y/N]: ") != "y":
+        exit(1)
+
+    release_branch_name = f"release/{next_version}"
+    tag_name = f"v{next_version}"
+    logging.debug(f"Release branch: {release_branch_name}")
+    logging.debug(f"Tag name: {tag_name}")
+
+    if branch.name != release_branch_name:
+        checkout_branch(release_branch_name)
+
+    update_manifest_version_number(next_version)
+    add_changes()
+    commit_changes("Update version to {next_version}")
+
+    if release_type != ReleaseType.BETA:
+        merge_to_master(release_branch_name, f"Release v{next_version}")
+
+    create_tag(tag_name)
+
+    if input("Push to origin? [y/N]: ") != "y":
+        exit(1)
+
+    if get_current_branch() == MASTER:
+        push_to_origin(MASTER)
+
+    push_to_origin(release_branch_name)
+    push_to_origin(tag_name)
+    
+
+    # Restore initial branch
+    checkout_branch(branch.name)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "command",
-        help="Command to execute.",
-        choices=["release", "create-release-branch"],
-        nargs="?",
-    )
 
     parser.add_argument(
         "--loglevel",
@@ -215,5 +204,6 @@ if __name__ == "__main__":
         help="Define loglevel, default is INFO.",
     )
     args = parser.parse_args()
+    logging.basicConfig(level=args.loglevel)
 
     main(args)
