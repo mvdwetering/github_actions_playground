@@ -104,7 +104,7 @@ def enum_menu(title, choices):
             print("Invalid input, please enter a number")
             continue
         if choice in range(1, len(choices) + 1):
-            return choices[choice - 1]
+            return choices[choice]
         else:
             print("Invalid input, please enter a valid number")
 
