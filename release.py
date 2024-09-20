@@ -301,6 +301,7 @@ def main(args):
         )
 
     tag_name = f"v{next_version}"
+    logging.debug(f"Tag name: {tag_name}")
 
     print(f"On branch: {branch.name}")
     print(f"Release branch to use: {release_branch_name}")
@@ -310,8 +311,6 @@ def main(args):
 
     if input(f"Confirm release of version {next_version}? [y/N]: ") != "y":
         exit(1)
-
-    logging.debug(f"Tag name: {tag_name}")
 
     if branch.is_dev:
         Git.create_branch(release_branch_name)
@@ -339,19 +338,17 @@ def main(args):
 
     Git.create_tag(tag_name)
 
-    if input("Push to origin? [y/N]: ") != "y":
-        exit(1)
-
-    if Git.get_current_branch() == MASTER:
-        Git.push_to_origin(MASTER)
-
     if bump_version_after_release:
+        assert(Git.get_current_branch() != MASTER)
         update_manifest_version_number(bump_version_after_release)
         Git.add_changes()
         Git.commit_changes(f"Update version to {bump_version_after_release}")
 
-    Git.push_to_origin(release_branch_name)
-    Git.push_to_origin(tag_name)
+    if input("Push to origin? [y/N]: ") == "y":
+        if Git.get_current_branch() == MASTER:
+            Git.push_to_origin(MASTER)
+        Git.push_to_origin(release_branch_name)
+        Git.push_to_origin(tag_name)
 
     # Restore initial branch
     Git.checkout(branch.name)
