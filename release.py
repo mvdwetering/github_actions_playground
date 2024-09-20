@@ -260,11 +260,8 @@ def main(args):
             beta=release_type_modifier == ReleaseTypeModifier.BETA,
         )
 
-        print(next_version, next_version.major, next_version.minor, next_version.patch)
-
         # Release branch does not have alpha/beta modifiers
         release_branch_name = f"release/{AwesomeVersion(f'{next_version.major}.{next_version.minor}.{next_version.patch}')}"
-        Git.create_branch(release_branch_name)
 
     if branch.is_release:
         release_branch_name = branch.name
@@ -278,11 +275,14 @@ def main(args):
             )
         else:
             next_version = manifest_version
-            bump_version_after_release = bump_version(
-                manifest_version,
-                alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
-                beta=release_type_modifier == ReleaseTypeModifier.BETA,
-            )
+
+    # Alpha and beta modifiers are (also) bumped after release
+    if release_type_modifier != ReleaseTypeModifier.NO:
+        bump_version_after_release = bump_version(
+            next_version,
+            alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
+            beta=release_type_modifier == ReleaseTypeModifier.BETA,
+        )
 
     tag_name = f"v{next_version}"
 
@@ -296,10 +296,10 @@ def main(args):
 
     logging.debug(f"Tag name: {tag_name}")
 
-    if branch.name != release_branch_name:
+    if branch.is_dev:
+        Git.create_branch(release_branch_name)
         Git.checkout(release_branch_name)
 
-    if not bump_version_after_release:
         update_manifest_version_number(next_version)
         Git.add_changes()
         Git.commit_changes("Update version to {next_version}")
