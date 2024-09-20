@@ -271,7 +271,9 @@ def main(args):
         release_branch_name = branch.name
 
         # On release branch we can only bump alpha/beta, not major/minor/patch
-        release_type_modifier = enum_menu("Bump alpha or beta (no = release to master)?", ReleaseTypeModifier)
+        release_type_modifier = enum_menu(
+            "Bump alpha or beta (no = release to master)?", ReleaseTypeModifier
+        )
 
         if release_type_modifier == ReleaseTypeModifier.NO:
             next_version = AwesomeVersion(
@@ -290,7 +292,6 @@ def main(args):
                 next_version = next_manifest_version
             else:
                 next_version = manifest_version
-
 
     # Alpha and beta modifiers are (also) bumped after release
     if release_type_modifier != ReleaseTypeModifier.NO:
@@ -330,7 +331,8 @@ def main(args):
                 "merge",
                 "--no-ff",
                 release_branch_name,
-                "--strategy-option theirs",
+                "--strategy-option",
+                "theirs",
                 "-m",
                 f"Release v{next_version}",
             ]
@@ -339,7 +341,7 @@ def main(args):
     Git.create_tag(tag_name)
 
     if bump_version_after_release:
-        assert(Git.get_current_branch() != MASTER)
+        assert Git.get_current_branch() != MASTER
         update_manifest_version_number(bump_version_after_release)
         Git.add_changes()
         Git.commit_changes(f"Update version to {bump_version_after_release}")
