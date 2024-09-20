@@ -219,6 +219,9 @@ def get_last_released_version():
 def main(args):
     branch = Git.get_current_branch()
 
+    if not (branch.is_dev or branch.is_release):
+        raise ValueError(f"Unexpected branch: {branch.name}, should be dev or release/x.y.z")
+
     if not Git.workarea_is_clean():
         logging.error("Workarea is not clean")
         exit(1)
@@ -247,7 +250,7 @@ def main(args):
             beta=release_type_modifier == ReleaseTypeModifier.BETA,
         )
 
-        print(next_version)
+        print(next_version, next_version.major, next_version.minor, next_version.patch)
 
         # Release branch does not have alpha/beta modifiers
         release_branch_name = f"release/{AwesomeVersion(f'{next_version.major}.{next_version.minor}.{next_version.patch}')}"
