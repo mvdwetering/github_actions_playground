@@ -285,7 +285,7 @@ def main(args):
         )
 
         # Release branch does not have alpha/beta modifiers
-        release_branch_name = f"release/{AwesomeVersion(f"{next_version.major}.{next_version.minor},{next_version.patch}")}"
+        release_branch_name = f"release/{AwesomeVersion(f'{next_version.major}.{next_version.minor},{next_version.patch}')}"
         Git.create_branch(release_branch_name)
 
     if branch.is_release:
