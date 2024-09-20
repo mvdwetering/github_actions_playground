@@ -347,15 +347,16 @@ def main(args):
         Git.add_changes()
         Git.commit_changes(f"Update version to {bump_version_after_release}")
 
-    if input("Push to origin? [y/N]: ") == "y":
+    if input("Push to origin? [Y/n]: ") != "n":
         if Git.get_current_branch() == MASTER:
             Git.push_to_origin(MASTER)
         Git.push_to_origin(release_branch_name)
         Git.push_to_origin(tag_name)
+        print("Don't forget to push later or revert changes!")
 
-    # Restore initial branch
-    Git.checkout(branch.name)
 
+    print("Done!")
+    print(f"Currently on branch: {Git.get_current_branch()}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
