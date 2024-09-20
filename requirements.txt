@@ -1,0 +1,1 @@
+awesomeversion==24..6.0
