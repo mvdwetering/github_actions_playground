@@ -9,7 +9,7 @@ import json
 import os
 import re
 
-from awesomeversion import AwesomeVersion
+from awesomeversion import AwesomeVersion  # type: ignore[import]
 
 MASTER = "master"
 
@@ -107,48 +107,6 @@ def enum_menu(title, choices):
             return choices[choice - 1]
         else:
             print("Invalid input, please enter a valid number")
-
-
-def get_release_type():
-    while True:
-        str_choice = input(
-            "What type of release is this?\n  1 = Major\n  2 = Minor\n  3 = Patch\n  4 = Alpha\n  5 = Beta\n: "
-        )
-        try:
-            choice = int(str_choice)
-        except ValueError:
-            print("Invalid input, please enter a number")
-            continue
-        if choice == 1:
-            return ReleaseType.MAJOR
-        elif choice == 2:
-            return ReleaseType.MINOR
-        elif choice == 3:
-            return ReleaseType.PATCH
-        elif choice == 4:
-            return ReleaseType.ALPHA
-        elif choice == 5:
-            return ReleaseType.BETA
-        else:
-            print("Invalid input, please enter a valid number")
-
-
-def determine_next_version(version, release_type):
-    if release_type == ReleaseType.MAJOR:
-        return AwesomeVersion(f"{int(version.major) + 1}.0.0")
-    elif release_type == ReleaseType.MINOR:
-        return AwesomeVersion(f"{version.major}.{int(version.minor) + 1}.0")
-    elif release_type == ReleaseType.PATCH:
-        return AwesomeVersion(
-            f"{version.major}.{version.minor}.{int(version.patch) + 1}"
-        )
-    elif release_type == ReleaseType.BETA:
-        return AwesomeVersion(
-            f"{version.major}.{version.minor}.{version.patch}b{int(version.beta) + 1}"
-        )
-
-    raise ValueError(f"Invalid release type: {release_type}")
-
 
 def bump_version(
     version,
