@@ -302,7 +302,7 @@ def main(args):
 
         update_manifest_version_number(next_version)
         Git.add_changes()
-        Git.commit_changes("Update version to {next_version}")
+        Git.commit_changes(f"Update version to {next_version}")
 
     if not next_version.modifier:
         # Merge to master
@@ -331,7 +331,7 @@ def main(args):
     if bump_version_after_release:
         update_manifest_version_number(bump_version_after_release)
         Git.add_changes()
-        Git.commit_changes("Update version to {bump_version_after_release}")
+        Git.commit_changes(f"Update version to {bump_version_after_release}")
 
     Git.push_to_origin(release_branch_name)
     Git.push_to_origin(tag_name)
