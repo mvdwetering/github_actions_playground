@@ -329,7 +329,6 @@ def main(args):
         Git.push_to_origin(MASTER)
 
     if bump_version_after_release:
-        assert branch.is_release
         update_manifest_version_number(bump_version_after_release)
         Git.add_changes()
         Git.commit_changes("Update version to {bump_version_after_release}")
