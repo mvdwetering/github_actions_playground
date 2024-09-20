@@ -6,6 +6,7 @@ from enum import Enum
 import logging
 import subprocess
 import json
+import os
 
 from awesomeversion import AwesomeVersion
 
@@ -28,6 +29,50 @@ class Branch:
     @property
     def is_release(self):
         return self.name.startswith("release/")
+
+class Git():
+
+    @staticmethod
+    def get_current_branch() -> Branch:
+        branch_name = subprocess.check_output(["git", "branch", "--show-current"])
+        return Branch(branch_name.decode("utf-8").strip())
+
+    @staticmethod
+    def workarea_is_clean() -> bool:
+        return subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip() == ""
+
+    @staticmethod
+    def checkout(branch):
+        subprocess.run(["git", "checkout", branch])
+
+    @staticmethod
+    def add_changes():
+        subprocess.run(["git", "add", "--all"])
+
+    @staticmethod
+    def commit_changes(message):
+        subprocess.run(["git", "commit", "-m", message])
+
+    @staticmethod
+    def pull():
+        subprocess.run(["git", "pull"])
+
+    @staticmethod
+    def delete_branch(name):
+        subprocess.run(["git", "branch", "-D", name])
+
+    @staticmethod
+    def create_tag(name):
+        subprocess.run(["git", "tag", name])
+
+    @staticmethod
+    def push_to_origin(name):
+        subprocess.run(["git", "push", "origin", name])
+
+    @staticmethod
+    def fetch_tags():
+        subprocess.run(["git", "fetch", "--tags"])
+
 
 def get_release_type():
     while True:
@@ -60,9 +105,6 @@ def determine_next_version(version, release_type):
 
     raise ValueError(f"Invalid release type: {release_type}")
 
-def get_current_branch():
-    branch_name = subprocess.check_output(["git", "branch", "--show-current"])
-    return Branch(branch_name.decode("utf-8").strip())
 
 def get_versions():
     version_tags = subprocess.check_output(["git", "tag", "-l", "v*"])
@@ -76,11 +118,13 @@ def get_versions():
     awesome_versions.sort()
     return awesome_versions
 
-def workarea_is_clean():
-    return subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip() == ""
 
 def get_integration_name():
-    return "integration_name"
+    dir_list = [name for name in os.listdir("custom_components") if os.path.isdir(os.path.join("custom_components", name))]
+    if len(dir_list) != 1:
+        raise ValueError(f"Expected one directory below custom_components, but found {', '.join(dir_list)}")
+    return dir_list[0]
+    
 
 def update_manifest_version_number(version):
     manifest_file = "custom_components/{}/manifest.json".format(get_integration_name())
@@ -100,28 +144,6 @@ def get_version_from_manifest():
 
     return AwesomeVersion(manifest["version"])
 
-def checkout_branch(branch):
-    subprocess.run(["git", "checkout", branch])
-
-def add_changes():
-    subprocess.run(["git", "add", "--all"])
-
-def commit_changes(message):
-    subprocess.run(["git", "commit", "-m", message])
-
-def merge_to_master(release_branch, message):
-    subprocess.run(["git", "checkout", MASTER])    
-    subprocess.run(["git", "pull"])
-    subprocess.run(["git", "merge", "--no-ff", release_branch, "--strategy-option theirs", "-m", message])
-
-def delete_release_branch(release_branch):
-    subprocess.run(["git", "branch", "-D", release_branch])
-
-def create_tag(tag_name):
-    subprocess.run(["git", "tag", tag_name])
-
-def push_to_origin(branch):
-    subprocess.run(["git", "push", "origin", branch])
 
 def get_last_released_version():
     versions = get_versions()
@@ -130,11 +152,13 @@ def get_last_released_version():
 
 
 def main(args):
-    branch = get_current_branch()
+    branch = Git.get_current_branch()
 
-    if not workarea_is_clean():
+    if not Git.workarea_is_clean():
         logging.error("Workarea is not clean")
         exit(1)
+
+    Git.fetch_tags()
 
     if branch.is_dev:
         last_released_version = get_last_released_version()
@@ -169,29 +193,32 @@ def main(args):
     logging.debug(f"Tag name: {tag_name}")
 
     if branch.name != release_branch_name:
-        checkout_branch(release_branch_name)
+        Git.checkout(release_branch_name)
 
     update_manifest_version_number(next_version)
-    add_changes()
-    commit_changes("Update version to {next_version}")
+    Git.add_changes()
+    Git.commit_changes("Update version to {next_version}")
 
     if release_type != ReleaseType.BETA:
-        merge_to_master(release_branch_name, f"Release v{next_version}")
+        # Merge to master
+        Git.checkout(MASTER)
+        Git.pull()
+        subprocess.run(["git", "merge", "--no-ff", release_branch_name, "--strategy-option theirs", "-m", f"Release v{next_version}"])
 
-    create_tag(tag_name)
+    Git.create_tag(tag_name)
 
     if input("Push to origin? [y/N]: ") != "y":
         exit(1)
 
-    if get_current_branch() == MASTER:
-        push_to_origin(MASTER)
+    if Git.get_current_branch() == MASTER:
+        Git.push_to_origin(MASTER)
 
-    push_to_origin(release_branch_name)
-    push_to_origin(tag_name)
+    Git.push_to_origin(release_branch_name)
+    Git.push_to_origin(tag_name)
     
 
     # Restore initial branch
-    checkout_branch(branch.name)
+    Git.checkout(branch.name)
 
 
 if __name__ == "__main__":
