@@ -215,7 +215,7 @@ def get_version_from_manifest():
 def get_last_released_version():
     versions = get_versions()
     logging.debug(f"Versions: {versions}")
-    return versions[-1]
+    return versions[-1] if len(versions) > 0 else None
 
 
 def main(args):
@@ -241,6 +241,10 @@ def main(args):
     if branch.is_dev:
         last_released_version = get_last_released_version()
         print(f"Last released version was {last_released_version}")
+
+        if not last_released_version:
+            print("First release, nice!")
+            last_released_version = AwesomeVersion("0.0.0")
 
         release_type = enum_menu("What type of release is this?", ReleaseType)
         release_type_modifier = enum_menu(
