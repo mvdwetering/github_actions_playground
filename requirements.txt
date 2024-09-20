@@ -1,1 +1,1 @@
-awesomeversion==24..6.0
+awesomeversion==24.6.0
