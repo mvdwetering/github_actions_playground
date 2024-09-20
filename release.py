@@ -235,7 +235,7 @@ def main(args):
         print(f"Last released version was {last_released_version}")
 
         release_type = enum_menu("What type of release is this?", ReleaseType)
-        release_type_modifier = enum_menu("Create releasebranch for alpah or beta?", ReleaseTypeModifier)
+        release_type_modifier = enum_menu("Create releasebranch for alpha or beta?", ReleaseTypeModifier)
 
         next_version = bump_version(
             last_released_version,
