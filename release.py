@@ -274,7 +274,19 @@ def main(args):
                 manifest_version.major, manifest_version.minor, manifest_version.patch
             )
         else:
-            next_version = manifest_version
+            next_manifest_version = bump_version(
+                manifest_version,
+                alpha=release_type_modifier == ReleaseTypeModifier.ALPHA,
+                beta=release_type_modifier == ReleaseTypeModifier.BETA,
+            )
+
+            # Changing from alpha to beta should bump the version before release
+            version_diff = next_manifest_version - manifest_version
+            if version_diff.modifier:
+                next_version = next_manifest_version
+            else:
+                next_version = manifest_version
+
 
     # Alpha and beta modifiers are (also) bumped after release
     if release_type_modifier != ReleaseTypeModifier.NO:
@@ -289,6 +301,8 @@ def main(args):
     print(f"On branch: {branch.name}")
     print(f"Release branch to use: {release_branch_name}")
     print(f"Tag name: {tag_name}")
+    if bump_version_after_release:
+        print(f"Bump version after release: {bump_version_after_release}")
     print(" ")
 
     if input(f"Confirm release of version {next_version}? [y/N]: ") != "y":
